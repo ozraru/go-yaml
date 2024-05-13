@@ -867,9 +867,6 @@ func (d *Decoder) decodeValue(ctx context.Context, dst reflect.Value, src ast.No
 	valueType := dst.Type()
 	switch valueType.Kind() {
 	case reflect.Ptr:
-		if dst.IsNil() {
-			return nil
-		}
 		if src.Type() == ast.NullType {
 			// set nil value to pointer
 			dst.Set(reflect.Zero(valueType))
@@ -880,6 +877,7 @@ func (d *Decoder) decodeValue(ctx context.Context, dst reflect.Value, src ast.No
 			return errors.Wrapf(err, "failed to decode ptr value")
 		}
 		dst.Set(d.castToAssignableValue(v, dst.Type()))
+		return nil
 	case reflect.Interface:
 		if dst.Type() == astNodeType {
 			dst.Set(reflect.ValueOf(src))
@@ -888,6 +886,7 @@ func (d *Decoder) decodeValue(ctx context.Context, dst reflect.Value, src ast.No
 		v := reflect.ValueOf(d.nodeToValue(src))
 		if v.IsValid() {
 			dst.Set(v)
+			return nil
 		}
 	case reflect.Map:
 		return d.decodeMap(ctx, dst, src)
@@ -974,17 +973,8 @@ func (d *Decoder) castToAssignableValue(value reflect.Value, target reflect.Type
 	if target.Kind() != reflect.Ptr {
 		return value
 	}
-	maxTryCount := 5
-	tryCount := 0
-	for {
-		if tryCount > maxTryCount {
-			return value
-		}
-		if value.Type().AssignableTo(target) {
-			break
-		}
+	if !value.Type().AssignableTo(target) {
 		value = value.Addr()
-		tryCount++
 	}
 	return value
 }

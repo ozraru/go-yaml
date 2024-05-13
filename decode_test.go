@@ -2464,6 +2464,21 @@ func TestUnmarshalablePtrInt(t *testing.T) {
 	})
 }
 
+func TestDoubleIndirection(t *testing.T) {
+	t.Run("double indirection string", func(t *testing.T) {
+		t.Parallel()
+		var container struct {
+			Value *string
+		}
+		if err := yaml.Unmarshal([]byte(`"hoge"`), &container.Value); err != nil {
+			t.Fatalf("failed to unmarshal %v", err)
+		}
+		if container.Value == nil || *container.Value != "hoge" {
+			t.Fatalf("expected hoge, but %q is set", *container.Value)
+		}
+	})
+}
+
 type literalContainer struct {
 	v string
 }
